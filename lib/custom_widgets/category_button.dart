@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 class CategoryButton extends StatelessWidget {
   const CategoryButton(
-      {required this.onPressed,required this.text,
+      {required this.onPressed,
+      required this.text,
       required this.height,
       required this.padding,
       required this.borderRadius,
-        required this.shadowBlurRadius,
+      required this.shadowBlurRadius,
       Key? key})
       : super(key: key);
   final String text;
@@ -18,7 +19,8 @@ class CategoryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(onTap: onPressed,
+    return InkWell(
+      onTap: onPressed,
       child: Container(
         decoration: BoxDecoration(
             color: Colors.white,
@@ -26,7 +28,13 @@ class CategoryButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius)),
         padding: EdgeInsets.only(left: padding, right: padding),
         height: 20,
-        child: Center(child: Text(text, textAlign: TextAlign.center,style: TextStyle(fontSize: 14),)),
+        child: Center(
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14),
+          ),
+        ),
       ),
     );
   }
