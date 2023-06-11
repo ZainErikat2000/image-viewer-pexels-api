@@ -3,11 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:josequal/ViewModel/ImagesView/ImagesStates.dart';
 import 'package:josequal/custom_widgets/category_button.dart';
 import 'package:josequal/custom_widgets/search_field.dart';
-import 'package:josequal/services/pexels_image_getter.dart';
+import 'package:josequal/pages/photo_page.dart';
+import 'package:josequal/services/database/DatabaseHelper.dart';
+
 
 import 'ViewModel/ImagesView/ImagesCubit.dart';
 
-void main() {
+void main() async {
+  await WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
@@ -17,7 +20,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Home(),
+      home: BlocProvider<ImagesCubit>(
+        create: (context) => ImagesCubit()..getCuratedImages(),
+        child: Home(),
+      ),
     );
   }
 }
@@ -30,6 +36,18 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  TextEditingController searchController = TextEditingController();
+
+  void _asyncMethod()async{
+    await DatabaseHelper.db();
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,30 +57,39 @@ class _HomeState extends State<Home> {
         width: MediaQuery.of(context).size.width,
         child: Stack(
           children: [
-            BlocProvider<ImagesCubit>(
-              create: (context) => ImagesCubit()..getCuratedImages(),
-              child: Positioned(
-                child: BlocConsumer<ImagesCubit, Map<String, dynamic>>(
-                    listener: (context, map) {},
-                    builder: (context, map) {
-                      if (map['state'] is ImagesLoadingState) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 10, right: 10),
-                        child: GridView(
-                          gridDelegate:
-                              SliverGridDelegateWithMaxCrossAxisExtent(
-                                  maxCrossAxisExtent:
-                                      MediaQuery.of(context).size.width / 2,
-                                  mainAxisExtent: 300,
-                                  mainAxisSpacing: 10,
-                                  crossAxisSpacing: 10),
-                          children: List.generate(
-                            map['data'].length,
-                            (index) => ClipRRect(
+            Positioned(
+              child: BlocConsumer<ImagesCubit, Map<String, dynamic>>(
+                  listener: (context, map) {},
+                  builder: (context, map) {
+                    if (map['state'] is ImagesLoadingState) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 10, right: 10),
+                      child: GridView(
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent:
+                                MediaQuery.of(context).size.width / 2,
+                            mainAxisExtent: 300,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10),
+                        children: List.generate(
+                          map['data'].length,
+                          (index) => InkWell(
+                            onTap: () async {
+                              bool fav = await DatabaseHelper.findFav(map['data'][index].id);
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      PhotoPage(imageModel: map['data'][index],fav: fav,),
+                                ),
+                              );
+                            },
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
                               child: Image(
                                 image: NetworkImage(map['data'][index].small),
@@ -71,9 +98,9 @@ class _HomeState extends State<Home> {
                             ),
                           ),
                         ),
-                      );
-                    }),
-              ),
+                      ),
+                    );
+                  }),
             ),
             Positioned(
               top: 0,
@@ -92,9 +119,7 @@ class _HomeState extends State<Home> {
                   children: [
                     CategoryButton(
                       onPressed: () async {
-                        Map<String, dynamic> map =
-                            await PexelsManager().getAllImages();
-                        print(map);
+                        context.read<ImagesCubit>().getCuratedImages();
                       },
                       text: 'Browse',
                       height: 30,
@@ -103,7 +128,7 @@ class _HomeState extends State<Home> {
                       shadowBlurRadius: 2,
                     ),
                     CategoryButton(
-                      onPressed: () {},
+                      onPressed: () {context.read<ImagesCubit>().getFavourites();},
                       text: 'Favourites',
                       height: 30,
                       padding: 10,
@@ -140,10 +165,35 @@ class _HomeState extends State<Home> {
                       children: [
                         Container(
                             decoration: BoxDecoration(
-                                boxShadow: [BoxShadow(blurRadius: 2)],
+                                boxShadow: const [BoxShadow(blurRadius: 2)],
                                 borderRadius: BorderRadius.circular(32)),
                             width: MediaQuery.of(context).size.width * .5,
-                            child: SearchField())
+                            child: SearchField(
+                              controller: searchController,
+                            )),
+                        const SizedBox(
+                          width: 20,
+                        ),
+                        InkWell(
+                          onTap: () {
+                            if (searchController.text.isEmpty) {
+                              return;
+                            }
+
+                            context.read<ImagesCubit>().getSearchImages(
+                                searchTerm: searchController.text);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(32)),
+                            width: 60,
+                            height: 60,
+                            child: const Center(
+                              child: Icon(Icons.search, size: 32),
+                            ),
+                          ),
+                        )
                       ],
                     ),
                   ),

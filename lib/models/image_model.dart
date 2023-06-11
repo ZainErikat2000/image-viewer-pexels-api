@@ -18,4 +18,10 @@ class ImageModel {
       landscapeSrc: json['src']['portrait'],
       small: json['src']['medium'],
       owner: json['photographer']);
+
+  factory ImageModel.fromDataBase(Map<String,dynamic> data) => ImageModel(id: data['id'],
+      src: data['src'],
+      landscapeSrc: data['landscape'],
+      small: data['small'],
+      owner: data['owner']);
 }
