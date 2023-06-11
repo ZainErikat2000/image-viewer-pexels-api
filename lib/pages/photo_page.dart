@@ -15,10 +15,17 @@ class PhotoPage extends StatefulWidget {
 class _PhotoPageState extends State<PhotoPage> {
   final double infoBorderRadius = 32;
   bool isTapped = false;
+  bool isFav = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    isFav = widget.fav;
+  }
 
   @override
   Widget build(BuildContext context) {
-    bool isFav = widget.fav;
 
     double fullHeight = MediaQuery.of(context).size.height;
     double fullWidth = MediaQuery.of(context).size.width;
@@ -110,8 +117,14 @@ class _PhotoPageState extends State<PhotoPage> {
                             ),
                             onPressed: () async {
                               if(isFav){
+                                setState(() {
+                                  isFav = !isFav;
+                                });
                                 await removeFromFav();
                               }else{
+                                setState(() {
+                                  isFav = !isFav;
+                                });
                                 await addToFav();
                               }
                             },

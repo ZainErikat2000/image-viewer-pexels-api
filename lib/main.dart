@@ -6,7 +6,6 @@ import 'package:josequal/custom_widgets/search_field.dart';
 import 'package:josequal/pages/photo_page.dart';
 import 'package:josequal/services/database/DatabaseHelper.dart';
 
-
 import 'ViewModel/ImagesView/ImagesCubit.dart';
 
 void main() async {
@@ -38,7 +37,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   TextEditingController searchController = TextEditingController();
 
-  void _asyncMethod()async{
+  void _asyncMethod() async {
     await DatabaseHelper.db();
   }
 
@@ -59,48 +58,68 @@ class _HomeState extends State<Home> {
           children: [
             Positioned(
               child: BlocConsumer<ImagesCubit, Map<String, dynamic>>(
-                  listener: (context, map) {},
-                  builder: (context, map) {
-                    if (map['state'] is ImagesLoadingState) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 10),
-                      child: GridView(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent:
-                                MediaQuery.of(context).size.width / 2,
-                            mainAxisExtent: 300,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10),
-                        children: List.generate(
-                          map['data'].length,
-                          (index) => InkWell(
-                            onTap: () async {
-                              bool fav = await DatabaseHelper.findFav(map['data'][index].id);
+                  listener: (context, map) {
+                if (map['state'] is ImagesErrorState) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const AlertDialog(
+                      backgroundColor: Colors.deepOrange,
+                      title: Text('Sorry, an Issue Occurred'),
+                      content: Text('Try Again Later'),
+                    ),
+                  );
+                }
+              }, builder: (context, map) {
+                if (map['state'] is ImagesLoadingState) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (map['data'].length == 0) {
+                  return const Center(
+                    child: Text(
+                      'No Images Here. Sorry!',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(left: 10, right: 10),
+                  child: GridView(
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent:
+                            MediaQuery.of(context).size.width / 2,
+                        mainAxisExtent: 300,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10),
+                    children: List.generate(
+                      map['data'].length,
+                      (index) => InkWell(
+                        onTap: () async {
+                          bool fav = await DatabaseHelper.findFav(
+                              map['data'][index].id);
 
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      PhotoPage(imageModel: map['data'][index],fav: fav,),
-                                ),
-                              );
-                            },
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Image(
-                                image: NetworkImage(map['data'][index].small),
-                                fit: BoxFit.fitHeight,
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PhotoPage(
+                                imageModel: map['data'][index],
+                                fav: fav,
                               ),
                             ),
+                          );
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image(
+                            image: NetworkImage(map['data'][index].small),
+                            fit: BoxFit.fitHeight,
                           ),
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
+                );
+              }),
             ),
             Positioned(
               top: 0,
@@ -128,7 +147,9 @@ class _HomeState extends State<Home> {
                       shadowBlurRadius: 2,
                     ),
                     CategoryButton(
-                      onPressed: () {context.read<ImagesCubit>().getFavourites();},
+                      onPressed: () {
+                        context.read<ImagesCubit>().getFavourites();
+                      },
                       text: 'Favourites',
                       height: 30,
                       padding: 10,
